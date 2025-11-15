@@ -1,0 +1,35 @@
+# Ignore files for Vercel deployment
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+ENV/
+env/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Local output directories (not needed on Vercel)
+output/
+uploads/
+logs/
+*.log
+failed_videos.log
+
+# Development files
+.env.local
+.env.development
+manifest.csv
+

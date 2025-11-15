@@ -101,7 +101,7 @@ def append_to_file(filepath: str, content: str) -> bool:
         return False
 
 
-def get_output_paths(course: str, module: str = None, video_title: str = None) -> dict:
+def get_output_paths(course: str, module: str = None, video_title: str = None, output_base: str = None) -> dict:
     """
     Generate standardized output paths for different file types.
     
@@ -109,11 +109,18 @@ def get_output_paths(course: str, module: str = None, video_title: str = None) -
         course: Course name
         module: Module name (optional)
         video_title: Video title (optional)
+        output_base: Base output directory (defaults to "output" or "/tmp/output" on Vercel)
         
     Returns:
         Dictionary with paths for raw_vtt, cleaned_markdown, and final_pdfs
     """
-    base_output = Path("output")
+    import os
+    if output_base:
+        base_output = Path(output_base)
+    elif os.getenv('VERCEL'):
+        base_output = Path("/tmp/output")
+    else:
+        base_output = Path("output")
     
     # Sanitize names
     safe_course = sanitize_filename(course)

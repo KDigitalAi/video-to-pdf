@@ -38,8 +38,12 @@ env/
 # Output directories
 output/
 *.log
+uploads/
+
+# Flask
+instance/
+.webassets-cache
 
 # OS
 .DS_Store
 Thumbs.db
-

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vimeo Subtitle to PDF Converter</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="hero-content">
+                <h1>Vimeo Subtitle Automation</h1>
+                <p class="tagline">Transform Video Courses into Beautiful PDFs</p>
+                <div class="hero-description">
+                    <p class="hero-text">
+                        A revolutionary automation platform built by <strong>Aseem Faras</strong> that eliminates hours of manual work. 
+                        Convert hundreds of Vimeo video subtitles into professionally formatted course PDFs in minutes, 
+                        saving countless hours of manual transcription and formatting.
+                    </p>
+                    <div class="benefits">
+                        <span class="benefit-badge">⚡ 100x Faster</span>
+                        <span class="benefit-badge">💰 Saves Time</span>
+                        <span class="benefit-badge">🎯 Zero Manual Work</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="upload-section" id="uploadSection">
+            <div class="section-content">
+                <div class="upload-box">
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        <div class="file-input-wrapper">
+                            <input type="file" id="fileInput" name="file" accept=".csv" required>
+                            <label for="fileInput" class="file-label">
+                                <span class="file-icon">📄</span>
+                                <span class="file-text">Choose CSV File</span>
+                            </label>
+                        </div>
+                        <div id="fileName" class="file-name"></div>
+                        <button type="submit" class="btn btn-primary" id="uploadBtn">
+                            <span class="btn-text">Upload & Process</span>
+                            <span class="btn-loader" style="display: none;">⏳</span>
+                        </button>
+                    </form>
+                </div>
+
+                <div class="info-box">
+                <h3>📋 CSV Format Requirements</h3>
+                <p>Your CSV file should have the following columns:</p>
+                <ul>
+                    <li><code>course</code> - Course name</li>
+                    <li><code>module</code> - Module name</li>
+                    <li><code>module_index</code> - Module number (for ordering)</li>
+                    <li><code>video_title</code> - Video title</li>
+                    <li><code>video_url</code> - Full Vimeo URL (e.g., https://vimeo.com/123456789)</li>
+                    <li><code>video_index</code> - Video number within module</li>
+                </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="processing-section" id="processingSection" style="display: none;">
+            <div class="status-box">
+                <h2>Processing Your Request</h2>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">0%</div>
+                </div>
+                <p class="status-message" id="statusMessage">Initializing...</p>
+            </div>
+        </div>
+
+        <div class="result-section" id="resultSection" style="display: none;">
+            <div class="result-box success" id="successBox">
+                <div class="success-icon">✓</div>
+                <h2>PDF Generated Successfully!</h2>
+                <p id="resultMessage" class="result-detail"></p>
+                <div class="action-buttons">
+                    <button class="btn btn-download" id="downloadBtn">
+                        Download PDF
+                    </button>
+                    <button class="btn btn-home" onclick="resetForm()">
+                        ← Back to Home
+                    </button>
+                </div>
+            </div>
+            <div class="result-box error" id="errorBox" style="display: none;">
+                <div class="error-icon">✕</div>
+                <h2>Processing Failed</h2>
+                <p id="errorMessage" class="result-detail"></p>
+                <div class="action-buttons">
+                    <button class="btn btn-secondary" onclick="resetForm()">Try Again</button>
+                    <button class="btn btn-home" onclick="resetForm()">← Back to Home</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Built with ❤️ by <strong>Aseem Faras</strong> | Revolutionizing Course Content Automation</p>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
+

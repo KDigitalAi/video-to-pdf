@@ -26,20 +26,29 @@ class Pipeline:
     Main pipeline for processing Vimeo videos to course PDFs.
     """
     
-    def __init__(self, vimeo_token: str):
+    def __init__(self, vimeo_token: str, output_base: str = None):
         """
         Initialize the pipeline.
         
         Args:
             vimeo_token: Vimeo API token
+            output_base: Base output directory (defaults to "output" or "/tmp/output" on Vercel)
         """
         self.vimeo_client = VimeoClient(vimeo_token)
         self.failed_videos = []
         
+        # Determine output base path
+        if output_base:
+            self.output_base = Path(output_base)
+        elif os.getenv('VERCEL'):
+            self.output_base = Path("/tmp/output")
+        else:
+            self.output_base = Path("output")
+        
         # Ensure output directories exist
-        Path("output/raw_vtt").mkdir(parents=True, exist_ok=True)
-        Path("output/cleaned_markdown").mkdir(parents=True, exist_ok=True)
-        Path("output/final_pdfs").mkdir(parents=True, exist_ok=True)
+        (self.output_base / "raw_vtt").mkdir(parents=True, exist_ok=True)
+        (self.output_base / "cleaned_markdown").mkdir(parents=True, exist_ok=True)
+        (self.output_base / "final_pdfs").mkdir(parents=True, exist_ok=True)
         Path("logs").mkdir(parents=True, exist_ok=True)
     
     def process_video(
@@ -63,7 +72,7 @@ class Pipeline:
         """
         try:
             # Get output paths
-            paths = get_output_paths(course, module, video_title)
+            paths = get_output_paths(course, module, video_title, output_base=str(self.output_base))
             
             # Step 1: Get text tracks from Vimeo API
             logger.info(f"Fetching text tracks for video: {video_title} ({video_id})")
@@ -219,12 +228,12 @@ class Pipeline:
         course_markdown = "".join(course_markdown_parts)
         
         # Save course markdown
-        course_markdown_path = Path("output/cleaned_markdown") / f"{sanitize_filename(course_name)}.md"
+        course_markdown_path = self.output_base / "cleaned_markdown" / f"{sanitize_filename(course_name)}.md"
         write_markdown_file(str(course_markdown_path), course_markdown)
         
         # Generate PDF
         logger.info(f"\nGenerating PDF for course: {course_name}")
-        pdf_path = Path("output/final_pdfs") / f"{sanitize_filename(course_name)}.pdf"
+        pdf_path = self.output_base / "final_pdfs" / f"{sanitize_filename(course_name)}.pdf"
         
         success = markdown_string_to_pdf(
             course_markdown,
