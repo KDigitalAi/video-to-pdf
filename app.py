@@ -20,7 +20,13 @@ from src.utils.logger import setup_logger
 # Load environment variables
 load_dotenv()
 
-app = Flask(__name__)
+# Initialize Flask app with explicit template and static folders
+app = Flask(
+    __name__,
+    template_folder='templates',
+    static_folder='static',
+    static_url_path='/static'
+)
 app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-change-in-production')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 

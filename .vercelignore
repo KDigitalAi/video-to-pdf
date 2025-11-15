@@ -22,6 +22,7 @@ env/
 Thumbs.db
 
 # Local output directories (not needed on Vercel)
+# Note: Keep static/ and templates/ folders - they are needed!
 output/
 uploads/
 logs/
@@ -32,4 +33,10 @@ failed_videos.log
 .env.local
 .env.development
 manifest.csv
+
+# Keep these folders for deployment:
+# static/
+# templates/
+# src/
+# api/
 

@@ -14,6 +14,13 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # Import Flask app
 from app import app
 
-# Vercel Python runtime expects the app object directly
-# The @vercel/python builder will handle WSGI wrapping
+# Vercel Python runtime handler
+def handler(request):
+    """
+    Vercel serverless function handler.
+    """
+    return app(request.environ, lambda status, headers: None)
+
+# Export app for Vercel
+__all__ = ['app', 'handler']
 
