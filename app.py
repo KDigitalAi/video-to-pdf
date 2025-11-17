@@ -282,6 +282,15 @@ def download_pdf(job_id):
     }), 400
 
 
+@app.route('/favicon.ico')
+def favicon():
+    """Handle favicon requests to prevent 404 errors."""
+    from flask import make_response
+    response = make_response('', 204)
+    response.headers['Content-Type'] = 'image/x-icon'
+    return response
+
+
 @app.route('/health')
 def health():
     """Health check endpoint."""
