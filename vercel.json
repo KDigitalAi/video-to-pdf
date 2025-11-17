@@ -1,11 +1,11 @@
 {
-  "functions": {
-    "api/index.py": {
-      "runtime": "python3.10",
-      "maxDuration": 60,
-      "memory": 1024
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python"
     }
-  },
+  ],
   "routes": [
     {
       "src": "/static/(.*)",
@@ -18,5 +18,11 @@
       "src": "/(.*)",
       "dest": "/api/index.py"
     }
-  ]
+  ],
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 60,
+      "memory": 1024
+    }
+  }
 }
