@@ -44,8 +44,22 @@ def setup_logger(log_dir: str = None) -> logging.Logger:
     file_handler = logging.FileHandler(log_file, encoding='utf-8')
     file_handler.setLevel(logging.INFO)
     
-    # Console handler
-    console_handler = logging.StreamHandler()
+    # Console handler - route INFO to stdout, WARNING/ERROR to stderr
+    import sys
+    
+    class LevelBasedHandler(logging.Handler):
+        """Handler that routes logs to stdout (INFO) or stderr (WARNING/ERROR)"""
+        def emit(self, record):
+            try:
+                msg = self.format(record)
+                if record.levelno >= logging.WARNING:
+                    sys.stderr.write(msg + '\n')
+                else:
+                    sys.stdout.write(msg + '\n')
+            except Exception:
+                self.handleError(record)
+    
+    console_handler = LevelBasedHandler()
     console_handler.setLevel(logging.INFO)
     
     # Formatter
