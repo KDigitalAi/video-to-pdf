@@ -49,7 +49,7 @@ class Pipeline:
         (self.output_base / "raw_vtt").mkdir(parents=True, exist_ok=True)
         (self.output_base / "cleaned_markdown").mkdir(parents=True, exist_ok=True)
         (self.output_base / "final_pdfs").mkdir(parents=True, exist_ok=True)
-        Path("logs").mkdir(parents=True, exist_ok=True)
+        # Logs directory is created by setup_logger() - no need to create here
     
     def process_video(
         self,
@@ -338,7 +338,11 @@ class Pipeline:
         # Log failed videos
         if self.failed_videos:
             logger.warning(f"\n{len(self.failed_videos)} videos failed to process")
-            failed_log_path = "failed_videos.log"
+            # Use /tmp on Vercel, local directory otherwise
+            if os.getenv('VERCEL'):
+                failed_log_path = "/tmp/failed_videos.log"
+            else:
+                failed_log_path = "failed_videos.log"
             
             with open(failed_log_path, 'w', encoding='utf-8') as f:
                 f.write("Failed Videos Log\n")

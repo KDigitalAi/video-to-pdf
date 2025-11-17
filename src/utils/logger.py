@@ -7,16 +7,25 @@ from datetime import datetime
 from pathlib import Path
 
 
-def setup_logger(log_dir: str = "logs") -> logging.Logger:
+def setup_logger(log_dir: str = None) -> logging.Logger:
     """
     Set up a logger with file and console handlers.
     
     Args:
-        log_dir: Directory to store log files
+        log_dir: Directory to store log files (auto-detected if None)
         
     Returns:
         Configured logger instance
     """
+    # Auto-detect log directory based on environment
+    if log_dir is None:
+        if os.getenv('VERCEL'):
+            # Vercel environment - use /tmp for writable files
+            log_dir = '/tmp/logs'
+        else:
+            # Local development
+            log_dir = 'logs'
+    
     # Create logs directory if it doesn't exist
     Path(log_dir).mkdir(parents=True, exist_ok=True)
     
