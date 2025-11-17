@@ -14,6 +14,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # Import Flask app
 from app import app
 
-# Export app for Vercel Python runtime
 # Vercel's @vercel/python automatically detects Flask/WSGI apps
+# The app variable must be in module scope for Vercel to detect it
 
