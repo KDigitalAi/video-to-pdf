@@ -14,13 +14,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # Import Flask app
 from app import app
 
-# Vercel Python runtime handler
-def handler(request):
-    """
-    Vercel serverless function handler.
-    """
-    return app(request.environ, lambda status, headers: None)
-
-# Export app for Vercel
-__all__ = ['app', 'handler']
+# Export app for Vercel Python runtime
+# Vercel's @vercel/python automatically detects Flask/WSGI apps
 
