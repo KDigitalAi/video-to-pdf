@@ -9,6 +9,7 @@ from flask import Flask, render_template, request, jsonify, send_file
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 import threading
+import zipfile
 
 # Add src to path
 import sys
@@ -75,7 +76,8 @@ def process_pipeline_async(job_id, manifest_path, vimeo_token):
             'status': 'processing',
             'progress': 0,
             'message': 'Initializing pipeline...',
-            'pdf_path': None,
+            'pdf_paths': [],  # Changed from pdf_path to pdf_paths (list)
+            'zip_path': None,  # Add ZIP file path
             'error': None
         }
         
@@ -98,14 +100,14 @@ def process_pipeline_async(job_id, manifest_path, vimeo_token):
         pipeline.run(manifest_path)
         
         job_status[job_id]['progress'] = 90
-        job_status[job_id]['message'] = 'Generating PDF...'
+        job_status[job_id]['message'] = 'Generating PDFs...'
         
-        # Find generated PDF - look for PDFs created after job started
+        # Find generated PDFs - look for PDFs created after job started
         job_start_time = time.time()
         pdf_files = []
         
-        # Wait a bit for PDF to be written
-        time.sleep(1)
+        # Wait a bit for PDFs to be written
+        time.sleep(2)
         
         for pdf_file in Path(app.config['OUTPUT_FOLDER']).glob('*.pdf'):
             # Check if file was modified after job started (or within last 5 minutes)
@@ -113,11 +115,21 @@ def process_pipeline_async(job_id, manifest_path, vimeo_token):
                 pdf_files.append(pdf_file)
         
         if pdf_files:
-            # Get the most recently created PDF
-            pdf_path = max(pdf_files, key=lambda p: p.stat().st_mtime)
+            # Sort by modification time to get all PDFs
+            pdf_files.sort(key=lambda p: p.stat().st_mtime)
+            
+            # Create ZIP file containing all PDFs
+            zip_filename = f"{job_id}_all_modules.zip"
+            zip_path = Path(app.config['OUTPUT_FOLDER']) / zip_filename
+            
+            with zipfile.ZipFile(str(zip_path), 'w', zipfile.ZIP_DEFLATED) as zipf:
+                for pdf_file in pdf_files:
+                    zipf.write(str(pdf_file), pdf_file.name)
+            
             job_status[job_id]['status'] = 'completed'
-            job_status[job_id]['pdf_path'] = str(pdf_path)
-            job_status[job_id]['message'] = f'PDF generated successfully: {pdf_path.name}'
+            job_status[job_id]['pdf_paths'] = [str(p) for p in pdf_files]  # Store all PDF paths
+            job_status[job_id]['zip_path'] = str(zip_path)  # Store ZIP path
+            job_status[job_id]['message'] = f'Generated {len(pdf_files)} PDF(s) successfully. ZIP file ready for download.'
             job_status[job_id]['progress'] = 100
         else:
             job_status[job_id]['status'] = 'error'
@@ -217,14 +229,16 @@ def get_status(job_id):
         'status': status['status'],
         'progress': status.get('progress', 0),
         'message': status.get('message', ''),
-        'pdf_path': status.get('pdf_path'),
+        'pdf_paths': status.get('pdf_paths', []),  # Changed from pdf_path
+        'zip_path': status.get('zip_path'),  # Add ZIP path
+        'pdf_count': len(status.get('pdf_paths', [])),  # Add count
         'error': status.get('error')
     })
 
 
 @app.route('/download/<job_id>')
 def download_pdf(job_id):
-    """Download generated PDF."""
+    """Download generated PDFs as ZIP file."""
     if job_id not in job_status:
         return jsonify({
             'success': False,
@@ -233,25 +247,39 @@ def download_pdf(job_id):
     
     status = job_status[job_id]
     
-    if status['status'] != 'completed' or not status.get('pdf_path'):
-        return jsonify({
-            'success': False,
-            'error': 'PDF not ready yet'
-        }), 400
+    # Check for ZIP file first (preferred)
+    if status.get('zip_path'):
+        zip_path = Path(status['zip_path'])
+        if zip_path.exists():
+            return send_file(
+                str(zip_path),
+                as_attachment=True,
+                download_name=f"all_modules_{job_id[:8]}.zip",
+                mimetype='application/zip'
+            )
     
-    pdf_path = Path(status['pdf_path'])
-    if not pdf_path.exists():
-        return jsonify({
-            'success': False,
-            'error': 'PDF file not found'
-        }), 404
+    # Fallback: if ZIP doesn't exist but we have PDFs, create it on the fly
+    if status['status'] == 'completed' and status.get('pdf_paths'):
+        pdf_paths = [Path(p) for p in status['pdf_paths'] if Path(p).exists()]
+        if pdf_paths:
+            zip_filename = f"{job_id}_all_modules.zip"
+            zip_path = Path(app.config['OUTPUT_FOLDER']) / zip_filename
+            
+            with zipfile.ZipFile(str(zip_path), 'w', zipfile.ZIP_DEFLATED) as zipf:
+                for pdf_file in pdf_paths:
+                    zipf.write(str(pdf_file), pdf_file.name)
+            
+            return send_file(
+                str(zip_path),
+                as_attachment=True,
+                download_name=f"all_modules_{job_id[:8]}.zip",
+                mimetype='application/zip'
+            )
     
-    return send_file(
-        str(pdf_path),
-        as_attachment=True,
-        download_name=pdf_path.name,
-        mimetype='application/pdf'
-    )
+    return jsonify({
+        'success': False,
+        'error': 'PDFs not ready yet'
+    }), 400
 
 
 @app.route('/health')

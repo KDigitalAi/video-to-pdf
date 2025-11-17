@@ -137,24 +137,22 @@ class Pipeline:
             })
             return None
     
-    def process_course(self, course_data: pd.DataFrame) -> bool:
+    def process_course(self, course_data: pd.DataFrame) -> List[str]:
         """
-        Process all videos in a course and generate final PDF.
+        Process all videos in a course and generate separate PDFs for each module.
         
         Args:
             course_data: DataFrame containing all videos for a course
             
         Returns:
-            True if successful, False otherwise
+            List of paths to generated PDF files (one per module)
         """
         course_name = course_data.iloc[0]["course"]
         logger.info(f"\n{'='*60}")
         logger.info(f"Processing Course: {course_name}")
         logger.info(f"{'='*60}")
         
-        # Store module markdowns
-        course_markdown_parts = []
-        course_markdown_parts.append(f"# {course_name}\n\n")
+        generated_pdfs = []
         
         # Process each module - SORT BY MODULE_INDEX FIRST
         # Group by module name first, then get module_index for sorting
@@ -181,8 +179,10 @@ class Pipeline:
             
             logger.info(f"\nProcessing Module {module_index}: {module_name}")
             
+            # Create module markdown with course name as header
             module_markdown_parts = []
-            module_markdown_parts.append(f"\n## Module {module_index}: {module_name}\n\n")
+            module_markdown_parts.append(f"# {course_name}\n\n")
+            module_markdown_parts.append(f"## Module {module_index}: {module_name}\n\n")
             
             # Process each video in module, sorted by video_index
             module_videos = module_group.sort_values("video_index")
@@ -220,33 +220,32 @@ class Pipeline:
                         video_markdown = f.read()
                     module_markdown_parts.append(video_markdown)
             
-            # Combine module videos
+            # Combine module videos into module markdown
             module_markdown = "".join(module_markdown_parts)
-            course_markdown_parts.append(module_markdown)
+            
+            # Save module markdown
+            module_markdown_path = self.output_base / "cleaned_markdown" / f"{sanitize_filename(course_name)}" / f"Module_{module_index}_{sanitize_filename(module_name)}.md"
+            module_markdown_path.parent.mkdir(parents=True, exist_ok=True)
+            write_markdown_file(str(module_markdown_path), module_markdown)
+            
+            # Generate PDF for this module
+            pdf_filename = f"{sanitize_filename(course_name)}_Module_{module_index}_{sanitize_filename(module_name)}.pdf"
+            pdf_path = self.output_base / "final_pdfs" / pdf_filename
+            
+            logger.info(f"\nGenerating PDF for Module {module_index}: {module_name}")
+            success = markdown_string_to_pdf(
+                module_markdown,
+                str(pdf_path),
+                title=f"{course_name} - Module {module_index}: {module_name}"
+            )
+            
+            if success:
+                logger.info(f"✓ Successfully generated PDF: {pdf_path}")
+                generated_pdfs.append(str(pdf_path))
+            else:
+                logger.error(f"✗ Failed to generate PDF: {pdf_path}")
         
-        # Combine all modules into course markdown
-        course_markdown = "".join(course_markdown_parts)
-        
-        # Save course markdown
-        course_markdown_path = self.output_base / "cleaned_markdown" / f"{sanitize_filename(course_name)}.md"
-        write_markdown_file(str(course_markdown_path), course_markdown)
-        
-        # Generate PDF
-        logger.info(f"\nGenerating PDF for course: {course_name}")
-        pdf_path = self.output_base / "final_pdfs" / f"{sanitize_filename(course_name)}.pdf"
-        
-        success = markdown_string_to_pdf(
-            course_markdown,
-            str(pdf_path),
-            title=course_name
-        )
-        
-        if success:
-            logger.info(f"✓ Successfully generated PDF: {pdf_path}")
-        else:
-            logger.error(f"✗ Failed to generate PDF: {pdf_path}")
-        
-        return success
+        return generated_pdfs
     
     def run(self, manifest_path: str) -> None:
         """
@@ -322,11 +321,19 @@ class Pipeline:
         
         logger.info(f"Found {total_courses} courses to process")
         
+        all_generated_pdfs = []
         for course_name, course_data in courses:
             try:
-                self.process_course(course_data)
+                pdfs = self.process_course(course_data)  # Now returns list of PDFs
+                all_generated_pdfs.extend(pdfs)
             except Exception as e:
                 logger.error(f"Error processing course {course_name}: {e}")
+        
+        # Log summary
+        if all_generated_pdfs:
+            logger.info(f"\n✓ Successfully generated {len(all_generated_pdfs)} PDF file(s)")
+            for pdf_path in all_generated_pdfs:
+                logger.info(f"  - {pdf_path}")
         
         # Log failed videos
         if self.failed_videos:
