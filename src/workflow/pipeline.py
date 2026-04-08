@@ -9,7 +9,8 @@ from tqdm import tqdm
 
 from src.api.vimeo_client import VimeoClient
 from src.processing.vtt_parser import parse_vtt_to_text
-from src.processing.text_cleaner import clean_subtitle_text, format_markdown_section
+from src.processing.text_cleaner import clean_subtitle_text
+from src.processing.smart_summarizer import smart_summarize
 from src.processing.pdf_generator import markdown_string_to_pdf
 from src.utils.file_utils import (
     write_markdown_file,
@@ -109,16 +110,18 @@ class Pipeline:
                 logger.warning(f"Cleaned text is empty for video {video_id}")
                 cleaned_text = f"[No subtitle content available for {video_title}]"
             
+            logger.info(f"Smart summarization for video: {video_title}")
+            structured_md = smart_summarize(
+                raw_text=cleaned_text,
+                video_title=video_title,
+                use_ai=True,
+            )
+            
             # Step 5: Save cleaned markdown
             markdown_filename = f"{sanitize_filename(video_title)}.md"
             markdown_filepath = paths["cleaned_markdown"] / markdown_filename
             
-            # Format as markdown section
-            markdown_content = format_markdown_section(
-                f"Video: {video_title}",
-                cleaned_text,
-                level=3
-            )
+            markdown_content = f"\n{structured_md.strip()}\n\n"
             
             if not write_markdown_file(str(markdown_filepath), markdown_content):
                 raise Exception(f"Failed to write markdown file for video {video_id}")

@@ -2,12 +2,18 @@ let currentJobId = null;
 let statusCheckInterval = null;
 
 document.getElementById('fileInput').addEventListener('change', function(e) {
-    const file = e.target.files[0];
+    const files = e.target.files;
     const fileNameDiv = document.getElementById('fileName');
-    
-    if (file) {
-        fileNameDiv.textContent = `Selected: ${file.name}`;
+
+    if (files && files.length > 0) {
+        const names = Array.from(files).map((f) => f.name);
+        const summary =
+            files.length === 1
+                ? `Selected: ${names[0]}`
+                : `Selected ${files.length} files:\n${names.join('\n')}`;
+        fileNameDiv.textContent = summary;
         fileNameDiv.style.display = 'block';
+        fileNameDiv.style.whiteSpace = 'pre-line';
     } else {
         fileNameDiv.textContent = '';
         fileNameDiv.style.display = 'none';
@@ -18,15 +24,17 @@ document.getElementById('uploadForm').addEventListener('submit', async function(
     e.preventDefault();
     
     const fileInput = document.getElementById('fileInput');
-    const file = fileInput.files[0];
-    
-    if (!file) {
-        alert('Please select a CSV file');
+    const files = fileInput.files;
+
+    if (!files || files.length === 0) {
+        alert('Please select a CSV or one or more VTT files');
         return;
     }
-    
+
     const formData = new FormData();
-    formData.append('file', file);
+    for (let i = 0; i < files.length; i++) {
+        formData.append('files', files[i]);
+    }
     
     const uploadBtn = document.getElementById('uploadBtn');
     const btnText = uploadBtn.querySelector('.btn-text');
@@ -120,6 +128,16 @@ async function checkStatus(jobId) {
             document.getElementById('successBox').style.display = 'block';
             document.getElementById('errorBox').style.display = 'none';
             document.getElementById('resultMessage').textContent = message || 'Your PDF is ready for download!';
+
+            const errList = document.getElementById('fileErrorsList');
+            const fileErrors = data.file_errors || [];
+            if (fileErrors.length > 0) {
+                errList.innerHTML = fileErrors.map((line) => `<li>${escapeHtml(line)}</li>`).join('');
+                errList.style.display = 'block';
+            } else {
+                errList.innerHTML = '';
+                errList.style.display = 'none';
+            }
             
             // Set up download button
             document.getElementById('downloadBtn').onclick = () => {
@@ -139,6 +157,9 @@ async function checkStatus(jobId) {
             document.getElementById('successBox').style.display = 'none';
             document.getElementById('errorBox').style.display = 'block';
             document.getElementById('errorMessage').textContent = data.error || 'Unknown error occurred';
+            const errListOk = document.getElementById('fileErrorsList');
+            errListOk.innerHTML = '';
+            errListOk.style.display = 'none';
             
             // Scroll to result section
             document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -150,11 +171,22 @@ async function checkStatus(jobId) {
     }
 }
 
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 function resetForm() {
     // Clear file input
     document.getElementById('fileInput').value = '';
     document.getElementById('fileName').textContent = '';
     document.getElementById('fileName').style.display = 'none';
+    const errList = document.getElementById('fileErrorsList');
+    if (errList) {
+        errList.innerHTML = '';
+        errList.style.display = 'none';
+    }
     
     // Reset sections
     document.getElementById('uploadSection').style.display = 'block';

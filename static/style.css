@@ -402,6 +402,18 @@ body {
     color: #495057;
 }
 
+.file-errors-list {
+    text-align: left;
+    margin: 12px 0 20px;
+    padding-left: 1.25rem;
+    color: #856404;
+    font-size: 0.95em;
+}
+
+.file-errors-list li {
+    margin: 6px 0;
+}
+
 .footer {
     background: #f8f9fa;
     padding: 25px;

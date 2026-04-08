@@ -32,10 +32,10 @@
                 <div class="upload-box">
                     <form id="uploadForm" enctype="multipart/form-data">
                         <div class="file-input-wrapper">
-                            <input type="file" id="fileInput" name="file" accept=".csv" required>
+                            <input type="file" id="fileInput" name="files" accept=".csv,.vtt" multiple required>
                             <label for="fileInput" class="file-label">
                                 <span class="file-icon">📄</span>
-                                <span class="file-text">Choose CSV File</span>
+                                <span class="file-text">Choose CSV or one or more VTT files</span>
                             </label>
                         </div>
                         <div id="fileName" class="file-name"></div>
@@ -47,8 +47,12 @@
                 </div>
 
                 <div class="info-box">
-                <h3>📋 CSV Format Requirements</h3>
-                <p>Your CSV file should have the following columns:</p>
+                <h3>📋 Upload Format Requirements</h3>
+                <p>You can upload either:</p>
+                <ul>
+                    <li><code>.vtt</code> - One or more subtitle files (must start with <code>WEBVTT</code>). Do not mix with CSV in the same upload.</li>
+                    <li><code>.csv</code> - A single manifest (only one CSV per upload) with the following columns:</li>
+                </ul>
                 <ul>
                     <li><code>course</code> - Course name</li>
                     <li><code>module</code> - Module name</li>
@@ -79,6 +83,7 @@
                 <div class="success-icon">✓</div>
                 <h2>PDF Generated Successfully!</h2>
                 <p id="resultMessage" class="result-detail"></p>
+                <ul id="fileErrorsList" class="file-errors-list" style="display: none;"></ul>
                 <div class="action-buttons">
                     <button class="btn btn-download" id="downloadBtn">
                         Download PDF
